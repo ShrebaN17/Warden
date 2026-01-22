@@ -1,0 +1,25 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python warden.py"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+```
+
+### Step 4: Add `runtime.txt` (Specify Python Version)
+Create a file named `runtime.txt`:
+```
+python-3.11
+```
+
+### Step 5: Project Structure Should Look Like:
+```
+Discord Bots/
+├── warden.py
+├── requirements.txt
+├── Procfile
+├── railway.toml
+├── runtime.txt
+├── .gitignore
+└── .env (local only, not committed)
