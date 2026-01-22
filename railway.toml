@@ -7,19 +7,18 @@ restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 ```
 
-### Step 4: Add `runtime.txt` (Specify Python Version)
-Create a file named `runtime.txt`:
+The issue was the backticks around `on_failure`. TOML doesn't use backticks - just use plain text for string values.
+
+## Actually, Simplest Solution - Skip railway.toml
+
+You don't actually need `railway.toml` at all! Railway can auto-detect Python projects. Just keep these two files:
+
+### 1. `requirements.txt`:
 ```
-python-3.11
+discord.py>=2.3.0
+python-dotenv>=1.0.0
 ```
 
-### Step 5: Project Structure Should Look Like:
+### 2. `Procfile`:
 ```
-Discord Bots/
-├── warden.py
-├── requirements.txt
-├── Procfile
-├── railway.toml
-├── runtime.txt
-├── .gitignore
-└── .env (local only, not committed)
+worker: python warden.py
