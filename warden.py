@@ -12,8 +12,8 @@ intents.members = False  # Set to True if you enabled it in Developer Portal
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Configuration
-UPDATE_CHANNEL_ID = None  # Set this to your channel ID
-RESET_HOUR = 0  # Hour when the day resets (24-hour format)
+UPDATE_CHANNEL_ID = os.getenv('UPDATE_CHANNEL_ID')  # Optional: set via environment variable
+RESET_HOUR = int(os.getenv('RESET_HOUR', '0'))  # Hour when the day resets (24-hour format)
 REMINDER_HOURS = [20, 22, 23]  # Hours to send reminders
 LOG_FILE = "update_logs.json"
 
@@ -40,13 +40,43 @@ def get_today():
 @bot.event
 async def on_ready():
     print(f'{bot.user} is now running!')
+    print(f'Bot ID: {bot.user.id}')
+    print(f'Connected to {len(bot.guilds)} server(s)')
+    
     global daily_updates
-    daily_updates = defaultdict(dict, load_logs())
+    try:
+        daily_updates = defaultdict(dict, load_logs())
+        print(f'Loaded {len(daily_updates)} days of logs')
+    except Exception as e:
+        print(f'Error loading logs: {e}')
+        daily_updates = defaultdict(dict)
     
     if not check_updates.is_running():
         check_updates.start()
+        print('Started check_updates task')
     if not send_reminders.is_running():
         send_reminders.start()
+        print('Started send_reminders task')
+    
+    print('Bot is ready and all tasks are running!')
+
+@bot.event
+async def on_error(event, *args, **kwargs):
+    print(f'Error in {event}:')
+    import traceback
+    traceback.print_exc()
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        return
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f"❌ Missing required argument. Use `!help_updates` for command info.")
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send("❌ You don't have permission to use this command.")
+    else:
+        print(f'Command error in {ctx.command}: {error}')
+        await ctx.send("❌ An error occurred. Please try again.")
 
 @bot.command(name='setchannel')
 @commands.has_permissions(administrator=True)
@@ -237,5 +267,13 @@ async def help_command(ctx):
 
 # Run the bot
 if __name__ == "__main__":
-    TOKEN = 'YOUR_TOKEN_HERE'  # Replace with your bot token
+    # Load token from environment variable (SECURE METHOD)
+    TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+    
+    if not TOKEN:
+        print("ERROR: DISCORD_BOT_TOKEN environment variable not set!")
+        print("Please set it using: set DISCORD_BOT_TOKEN=your_token_here (Windows)")
+        print("Or: export DISCORD_BOT_TOKEN=your_token_here (Linux/Mac)")
+        exit(1)
+    
     bot.run(TOKEN)
